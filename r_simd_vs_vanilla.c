@@ -6,57 +6,71 @@
 #include <string.h>
 
 // Function prototypes
-void sort_array(uint32_t *arr, size_t size);
+void sort_array_simd(uint32_t *arr, size_t size);
+void sort_array_vanilla(uint32_t *arr, size_t size);
 void radix_sort_simd(uint32_t *arr, uint32_t *temp, size_t size);
+void radix_sort_vanilla(uint32_t *arr, size_t size);
 
 static inline uint64_t rdtsc() {
-	 unsigned long a, d;
-	asm volatile ("rdtsc" : "=a" (a), "=d" (d));
-	return a | ((uint64_t)d<<32);
+    unsigned long a, d;
+    asm volatile("rdtsc" : "=a"(a), "=d"(d));
+    return a | ((uint64_t)d << 32);
 }
 
-
-// Main function
 int main() {
     // Initialize the array
-    size_t size = 1 << 5; // Example: Allocate space for 2^20 elements (~4MB for uint32_t)
-    uint32_t *sorted_arr = malloc(size * sizeof(uint32_t)); // Allocate memory for the sorted array
-    if (!sorted_arr) {
+    size_t size = 1 << 22; // Example: Allocate space for 2^15 elements (~128KB for uint32_t)
+    uint32_t *arr = malloc(size * sizeof(uint32_t)); // Allocate memory for the array
+    uint32_t *arr_copy = malloc(size * sizeof(uint32_t)); // Copy of the array for comparison
+    if (!arr || !arr_copy) {
         perror("Failed to allocate memory");
         exit(EXIT_FAILURE);
     }
     srand((unsigned)time(NULL)); // Seed the random number generator
     for (size_t i = 0; i < size; i++) {
-        sorted_arr[i] = rand();
-	printf("%d ", sorted_arr[i]);
+        arr[i] = rand();
+        arr_copy[i] = arr[i]; // Keep a copy for vanilla sorting
     }
 
-    // Sort the array
-    uint64_t start, end, speed;
-    start = rdtsc(); // timery
-    sort_array(sorted_arr, size);
-    end = rdtsc(); // time
-    speed = end - start;
-    printf("\nspeed: %d\n", speed);
-     
+    // SIMD Sorting
+    uint64_t start, end, simd_time, vanilla_time;
+    start = rdtsc();
+    sort_array_simd(arr, size);
+    end = rdtsc();
+    simd_time = end - start;
 
-    printf("Sorting complete.\n");
-    for (size_t i = 0; i < size; i++) {
-    	printf("%d ", sorted_arr[i]);
-	if (i > 2 && sorted_arr[i - 1] > sorted_arr[i]) {
-		printf("fail");
-		return 0;
-	}
+    // Vanilla Sorting
+    start = rdtsc();
+    sort_array_vanilla(arr_copy, size);
+    end = rdtsc();
+    vanilla_time = end - start;
+
+    // Compare results
+    printf("\nSorting complete.\n");
+    printf("SIMD sort time: %lu cycles\n", simd_time);
+    printf("Vanilla sort time: %lu cycles\n", vanilla_time);
+    printf("Percentage speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / vanilla_time) * 100);
+
+    // Validate sorting correctness
+    for (size_t i = 1; i < size; i++) {
+        if (arr[i - 1] > arr[i] || arr_copy[i - 1] > arr_copy[i]) {
+            printf("Sorting failed.\n");
+            free(arr);
+            free(arr_copy);
+            return 1;
+        }
     }
+    printf("Both sorts validated successfully.\n");
 
     // Cleanup
-    free(sorted_arr);
+    free(arr);
+    free(arr_copy);
 
     return 0;
 }
 
-// Sort an array using SIMD-accelerated radix sort
-void sort_array(uint32_t *arr, size_t size) {
+// Wrapper for SIMD sorting
+void sort_array_simd(uint32_t *arr, size_t size) {
     uint32_t *temp = malloc(size * sizeof(uint32_t)); // Temporary buffer for sorting
     if (!temp) {
         perror("Failed to allocate memory for temp buffer");
@@ -115,3 +129,50 @@ void radix_sort_simd(uint32_t *arr, uint32_t *temp, size_t size) {
         temp = swap;
     }
 }
+
+// Wrapper for Vanilla sorting
+void sort_array_vanilla(uint32_t *arr, size_t size) {
+    radix_sort_vanilla(arr, size);
+}
+
+// Vanilla radix sort
+void radix_sort_vanilla(uint32_t *arr, size_t size) {
+    const int RADIX = 10;
+    uint32_t max_val = arr[0];
+    for (size_t i = 1; i < size; i++) {
+        if (arr[i] > max_val) {
+            max_val = arr[i];
+        }
+    }
+
+    uint32_t *output = malloc(size * sizeof(uint32_t));
+    if (!output) {
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+
+    for (uint32_t exp = 1; max_val / exp > 0; exp *= RADIX) {
+        int count[RADIX];
+	memset(count, 0, sizeof(count));
+
+
+        for (size_t i = 0; i < size; i++) {
+            count[(arr[i] / exp) % RADIX]++;
+        }
+
+        for (int i = 1; i < RADIX; i++) {
+            count[i] += count[i - 1];
+        }
+
+        for (int i = size - 1; i >= 0; i--) {
+            output[--count[(arr[i] / exp) % RADIX]] = arr[i];
+        }
+
+        for (size_t i = 0; i < size; i++) {
+            arr[i] = output[i];
+        }
+    }
+
+    free(output);
+}
+
