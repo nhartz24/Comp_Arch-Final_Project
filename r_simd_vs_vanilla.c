@@ -49,7 +49,7 @@ int main() {
     printf("\nSorting complete.\n");
     printf("SIMD sort time: %lu cycles\n", simd_time);
     printf("Vanilla sort time: %lu cycles\n", vanilla_time);
-    printf("Percentage speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / vanilla_time) * 100);
+    printf("Percentage speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / simd_time) * 100);
 
     // Validate sorting correctness
     for (size_t i = 1; i < size; i++) {

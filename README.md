@@ -2,7 +2,7 @@
 gcc -O3 -mavx2 -o radix_sort_compare r_simd_vs_vanilla.c
 
 
-er3211@instance-20240925-160652:~/homework4$ ./radix_sort_compare 
+er3211@instance-20240925-160652:~/homework4$ ./radix_sort_compare
 
 Sorting complete.
 SIMD sort time: 68233700 cycles
@@ -17,5 +17,5 @@ questions for the TAs:
 - confirm that we should be optimizing through SIMD and parallelizing? is our idea good
 - are we ultimately suppoosed to use both sorting implemtations or just one (prof said chose two)
 - should we show speed up over time as we add optimizations?
-
-
+- should look at other optimizations / can we do a little bit of everything?
+- cycles vs seconds (for gpu?)
