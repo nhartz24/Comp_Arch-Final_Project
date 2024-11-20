@@ -38,40 +38,98 @@ struct tsk {
     size_t l, h;
 };
 
+struct tsk_m {
+    size_t l, h, m;
+};
+
 void *merge_sort_thread(void *arg) {
     struct tsk *tsk = (struct tsk *)arg;
     merge_sort(tsk->l, tsk->h);
     return NULL;
 }
 
+
+void *merge_sort_m(void *arg) {
+    struct tsk_m *tsk = (struct tsk_m *)arg;
+    merge(tsk->l, tsk->m ,tsk->h);
+    return NULL;
+}
+
 void sort_array(uint32_t *arr, size_t size) {
 
-    size_t N = 8; 
+    size_t num_threads = 16, N; 
+
+    N = num_threads;
 
     pthread_t threads[N];
     struct tsk tsklist[N];
+    struct tsk_m mlist[N];
     size_t p = MAX / N, l = 0;
 
-    for (size_t i = 0; i < N; i++, l += p) {
-        tsklist[i].l = l;
-        tsklist[i].h = (i == N - 1) ? MAX - 1 : l + p - 1;
-    }
 
-    for (size_t i = 0; i < N; i++) {
-        pthread_create(&threads[i], NULL, merge_sort_thread, &tsklist[i]);
-    }
-    for (size_t i = 0; i < N; i++) {
-        pthread_join(threads[i], NULL);
-    }
+    // for(int j = 1; j < num_threads; j*=2){
+    //     N = j;
+    //     p = MAX / N;
 
+        for (size_t i = 0; i < N; i++, l += p) {
+            tsklist[i].l = l;
+            tsklist[i].h = (i == N - 1) ? MAX - 1 : l + p - 1;
+        }
+
+        for (size_t i = 0; i < N; i++)
+            pthread_create(&threads[i], NULL, merge_sort_thread, &tsklist[i]);
+
+        for (size_t i = 0; i < N; i++)
+            pthread_join(threads[i], NULL);
+
+
+    // }
     //implement parallel merging if needed
 
+
+
+
+    for(int j = 2; j <= num_threads; j*=2){
+        l = 0;
+        N = num_threads/j;
+        p = MAX / N;
+
+        for (size_t i = 0; i < N; i++, l += p) {
+            mlist[i].l = l;
+            mlist[i].h = (i == N - 1) ? MAX - 1 : l + p - 1;
+            mlist[i].m = (mlist[i].h + mlist[i].l)/2;
+        }
+
+        for (size_t i = 0; i < N; i++){
+            pthread_create(&threads[i], NULL, merge_sort_m, &mlist[i]);
+        }
+        for (size_t i = 0; i < N; i++){
+            
+            pthread_join(threads[i], NULL);
+    }
+
+    }
+
+
+
+
+
+
 }
+
+void print_array(uint32_t *arr, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        printf("%u ", arr[i]);
+    }
+    printf("\n");
+}
+
 
 int main() {
     
  // Adjust to a reasonable number of threads
     size_t size = 1 << 28;
+    // size_t size = 64;
     u_int32_t *sorted_arr = malloc(size * sizeof(uint32_t)); 
     if (!sorted_arr) {
         perror("Failed to allocate memory");
@@ -80,12 +138,13 @@ int main() {
 
     srand((unsigned)time(NULL));
     for (size_t i = 0; i < size; i++)
-        sorted_arr[i] = rand();
+        sorted_arr[i] = ((rand() % 100) + 1);
 
     MAX = size;
     a = sorted_arr;
 
     sort_array(sorted_arr, size);
+    // print_array(sorted_arr, size);
 
     free(sorted_arr);
 
