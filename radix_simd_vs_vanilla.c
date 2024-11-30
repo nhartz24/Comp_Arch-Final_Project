@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <time.h>
-#include <immintrin.h> // For AVX2 intrinsics
+#include <immintrin.h> // AVX2 intrinsics
 #include <string.h>
 
 // Function prototypes
@@ -18,6 +18,7 @@ static inline uint64_t rdtsc() {
 }
 
 int main() {
+    
     // Initialize the array
     size_t size = 1 << 22; // Example: Allocate space for 2^15 elements (~128KB for uint32_t)
     uint32_t *arr = malloc(size * sizeof(uint32_t)); // Allocate memory for the array
