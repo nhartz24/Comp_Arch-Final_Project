@@ -69,7 +69,7 @@ void radix_sort_simd(uint32_t *arr, size_t size) {
             __m256i shifted = _mm256_srlv_epi32(elements, shift); // shift to target byte
             __m256i radix = _mm256_and_si256(shifted, mask); // extract byte
 
-            // scatter elemetns into buckets based on calculated placements
+            // scatter elements into buckets based on calculated placements
             for (int j = 0; j < 8; j++) {
                 uint32_t digit_value = _mm256_extract_epi32(radix, j);
                 sorting_arr[placements[digit_value]] = arr[i + j];
@@ -77,7 +77,7 @@ void radix_sort_simd(uint32_t *arr, size_t size) {
             }
         }
 
-        // Step 4: Swap buffers
+        // rotate pointers from the sorting array to the sorted array
         uint32_t *swap = arr;
         arr = sorting_arr;
         sorting_arr = swap;
