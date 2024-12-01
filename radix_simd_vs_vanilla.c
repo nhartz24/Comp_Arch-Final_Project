@@ -129,8 +129,9 @@ void radix_sort_vanilla(uint32_t *arr, size_t size) {
     
         // sort array based on histogram placements and current digit
         for (int i = size - 1; i >= 0; i--) {
-            sorting_arr[--count[(arr[i] / exponent) % RADIX]] = arr[i];
-            //count[(arr[i] / exponent) % RADIX]--;
+            uint32_t digit = (arr[i] / exponent) % RADIX;
+            count[digit]--;
+            sorting_arr[count[digit]] = arr[i];
         }
     
         // copy sorted array for current digit back to origional array
