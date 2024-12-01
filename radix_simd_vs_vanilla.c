@@ -18,7 +18,7 @@ static inline uint64_t rdtsc() {
 }
 
 // SIMD accelerated radix sort
-void radix_sort_simd(uint32_t *arr, size_t size) {
+void sort_array(uint32_t *arr, size_t size) {
 
 	// allocate space for array used in sorting
 	uint32_t *sorting_arr = malloc(size * sizeof(uint32_t));
@@ -145,7 +145,16 @@ void radix_sort_vanilla(uint32_t *arr, size_t size) {
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
+
+    // get power for data collection
+    if (argc != 2) {
+        printf("Usage: %s <power_of_two>\n", argv[0]);
+        printf("Example: %s 20 for testing with 2^20 elements\n", argv[0]);
+        return 1;
+    }
+    int power = atoi(argv[1]);
+    size_t size = 1ULL << power;
 	
 	// initialize random unssorted array	
 	size_t size = 1 << 22; // 2^22 elements (4GB given elements are unit32_t)
@@ -170,7 +179,7 @@ int main() {
 
     // SIMD radix sorting and timing
     start = rdtsc();
-    radix_sort_simd(arr_simd, size);
+    sort_array(arr_simd, size);
     end = rdtsc();
     simd_time = end - start;
 
@@ -184,6 +193,10 @@ int main() {
     printf("SIMD sort time: %d cycles\n", simd_time);
     printf("Vanilla sort time: %d cycles\n", vanilla_time);
     printf("Speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / simd_time) * 100);
+
+    // print results for csv
+    double speedup = ((double)(vanilla_time - simd_time) / simd_time) * 100;
+    printf("%d,%zu,%lu,%lu,%.2f\n", power, size, simd_time, vanilla_time, speedup);
 
     // validate sorting 
     for (size_t i = 1; i < size; i++) {
