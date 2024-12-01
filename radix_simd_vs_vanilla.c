@@ -21,8 +21,8 @@ static inline uint64_t rdtsc() {
 void radix_sort_simd(uint32_t *arr, size_t size) {
 
 	// allocate space for array used in sorting
-	uint32_t *temp = malloc(size * sizeof(uint32_t));
-	if (!temp) {
+	uint32_t *sorting_arr = malloc(size * sizeof(uint32_t));
+	if (!sorting_arr) {
         	perror("Failed to allocate memory");
         	exit(EXIT_FAILURE);
 	}
@@ -72,19 +72,19 @@ void radix_sort_simd(uint32_t *arr, size_t size) {
             // scatter elemetns into buckets based on calculated placements
             for (int j = 0; j < 8; j++) {
                 uint32_t digit_value = _mm256_extract_epi32(radix, j);
-                temp[placements[digit_value]] = arr[i + j];
+                sorting_arr[placements[digit_value]] = arr[i + j];
                 placements[digit_value]++;
             }
         }
 
         // Step 4: Swap buffers
         uint32_t *swap = arr;
-        arr = temp;
-        temp = swap;
+        arr = sorting_arr;
+        sorting_arr = swap;
     }
 	
 	// cleanup sorting array 
-    free(temp); 
+    free(sorting_arr); 
 
 }
 
@@ -148,7 +148,7 @@ void radix_sort_vanilla(uint32_t *arr, size_t size) {
 int main() {
 	
 	// initialize random unssorted array	
-	size_t size = 1 << 3; // 2^22 elements (4GB given elements are unit32_t)
+	size_t size = 1 << 22; // 2^22 elements (4GB given elements are unit32_t)
 	
 	// allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr_simd = malloc(size * sizeof(uint32_t));
@@ -201,7 +201,6 @@ int main() {
         // printf("%d\n", arr_simd[i]);
         // printf("%d\n", arr_vnla[i]);
     }
-
 
     // cleanup
 	free(arr_simd);
