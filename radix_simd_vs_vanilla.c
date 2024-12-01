@@ -104,44 +104,43 @@ void radix_sort_vanilla(uint32_t *arr, size_t size) {
 	}
 
 	// allocate space for array used in sorting
-    	uint32_t *sorting_arr = malloc(size * sizeof(uint32_t));
-    	if (!sorting_arr) {
-        	perror("Failed to allocate memory");
-        	exit(EXIT_FAILURE);
-    	}
+    uint32_t *sorting_arr = malloc(size * sizeof(uint32_t));
+    if (!sorting_arr) {
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
 	
-	// main sorting loop
-	// sort by each digit from least to most significant
-    	for (uint32_t exponent = 1; max_value/exponent > 0; exponent *= RADIX) {
-        	
-		// histogram for current digit
-		int count[RADIX];
-		memset(count, 0, sizeof(count));
-		
-		// count each instance of each number at current digit
-        	for (size_t i = 0; i < size; i++) {
-            		count[(arr[i] / exponent) % RADIX]++;
-        	}
-		
-		// convert counts into placements in histogram 
-        	for (int i = 1; i < RADIX; i++) {
-            		count[i] += count[i - 1];
-        	}
-		
-		// sort array based on histogram placements and current digit
-        	for (int i = size - 1; i >= 0; i--) {
-            		sorting_arr[--count[(arr[i] / exponent) % RADIX]] = arr[i];
-			//count[(arr[i] / exponent) % RADIX]--;
-        	}
-		
-		// copy sorted array for current digit back to origional array
-        	for (size_t i = 0; i < size; i++) {
-            		arr[i] = sorting_arr[i];
-        	}
-    	}
+    // main sorting loop
+    // sort by each digit from least to most significant
+    for (uint32_t exponent = 1; max_value/exponent > 0; exponent *= RADIX) {
+        // histogram for current digit
+        int count[RADIX];
+        memset(count, 0, sizeof(count));
+    
+        // count each instance of each number at current digit
+        for (size_t i = 0; i < size; i++) {
+            count[(arr[i] / exponent) % RADIX]++;
+        }
+    
+        // convert counts into placements in histogram 
+        for (int i = 1; i < RADIX; i++) {
+            count[i] += count[i - 1];
+        }
+    
+        // sort array based on histogram placements and current digit
+        for (int i = size - 1; i >= 0; i--) {
+            sorting_arr[--count[(arr[i] / exponent) % RADIX]] = arr[i];
+            //count[(arr[i] / exponent) % RADIX]--;
+        }
+    
+        // copy sorted array for current digit back to origional array
+        for (size_t i = 0; i < size; i++) {
+            arr[i] = sorting_arr[i];
+        }
+    }
 	
 	// claenup temporary sorting array
-    	free(sorting_arr);
+    free(sorting_arr);
 }
 
 
@@ -159,49 +158,51 @@ int main() {
 	}
 
 	// fill the arrays with (the same) random numbers
-    	srand((unsigned)time(NULL));
+    srand((unsigned)time(NULL));
 	for (size_t i = 0; i < size; i++) {
 		arr_simd[i] = rand();
 		arr_vnla[i] = arr_simd[i];
-    	}
+    }
 
-    	// SIMD radix sorting and timing
-    	uint64_t start, end, simd_time, vanilla_time;
-    	start = rdtsc();
-    	radix_sort_simd(arr_simd, size);
-    	end = rdtsc();
-    	simd_time = end - start;
+    // declare variables for timing
+    uint64_t start, end, simd_time, vanilla_time;
 
-    	// vanilla radix sorting and timing
-    	start = rdtsc();
-   	radix_sort_vanilla(arr_vnla, size);
-    	end = rdtsc();
-    	vanilla_time = end - start;
+    // SIMD radix sorting and timing
+    start = rdtsc();
+    radix_sort_simd(arr_simd, size);
+    end = rdtsc();
+    simd_time = end - start;
 
-    	// compare sorting results in cycles and speedup
-    	printf("SIMD sort time: %d cycles\n", simd_time);
-   	printf("Vanilla sort time: %d cycles\n", vanilla_time);
-    	printf("Speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / simd_time) * 100);
+    // vanilla radix sorting and timing
+    start = rdtsc();
+    radix_sort_vanilla(arr_vnla, size);
+    end = rdtsc();
+    vanilla_time = end - start;
 
-    	// validate sorting 
-    	for (size_t i = 1; i < size; i++) {
-        	if (arr_simd[i - 1] > arr_simd[i] || arr_vnla[i - 1] > arr_vnla[i]) {
-			if (arr_simd[i - 1] > arr_simd[i]) {
-            			printf("Simd sorting failed.\n");
-			} else {
-				printf("Vanilla sorting failed.\n");
-			}
-			// cleanup on failure
-            		free(arr_simd);
-            		free(arr_vnla);
-            		return 1;
-        	}
-		printf("%d\n", arr_simd[i]);
-		// printf("%d\n", arr_vnla[i]);
-    	}
+    // compare sorting results in cycles and speedup
+    printf("SIMD sort time: %d cycles\n", simd_time);
+    printf("Vanilla sort time: %d cycles\n", vanilla_time);
+    printf("Speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / simd_time) * 100);
+
+    // validate sorting 
+    for (size_t i = 1; i < size; i++) {
+        if (arr_simd[i - 1] > arr_simd[i] || arr_vnla[i - 1] > arr_vnla[i]) {
+            if (arr_simd[i - 1] > arr_simd[i]) {
+                printf("Simd sorting failed.\n");
+            } else {
+                printf("Vanilla sorting failed.\n");
+            }
+            // cleanup on failure
+            free(arr_simd);
+            free(arr_vnla);
+            return 1;
+        }
+        // printf("%d\n", arr_simd[i]);
+        // printf("%d\n", arr_vnla[i]);
+    }
 
 
-    	// cleanup
+    // cleanup
 	free(arr_simd);
 	free(arr_vnla);
 	
