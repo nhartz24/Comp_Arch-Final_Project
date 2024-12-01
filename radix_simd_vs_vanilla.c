@@ -25,11 +25,10 @@ void radix_sort_simd(uint32_t *arr, size_t size) {
 	if (!temp) {
         	perror("Failed to allocate memory");
         	exit(EXIT_FAILURE);
-    	}
+	}
 
-	// use radix base of 256 (one byte) meaning there will 4 digits per 4 byte uint32_t
-	const int RADIX = 256;
-	const int DIGITS = 4;
+	// use radix base of 256 (one byte)	
+	const int RADIX = 256;	
 	const int MASK = RADIX - 1; // mask for 8 bits (0xFF)
 
 	// aligned arrays for historgram and placements of elements (buckets)
@@ -37,22 +36,23 @@ void radix_sort_simd(uint32_t *arr, size_t size) {
 	uint32_t placements[RADIX] __attribute__((aligned(32)));
 
 	// main sorting loop
-	// sort by each digit from least to most significant
-    	for (int digit = 0; digit < DIGITS; digit++) {
+	// sort by each byte from least to most significant (4 digits bc 4 bytes in unint32_t)
+    	for (int digit = 0; digit < 4; digit++) {
+		
+		memset(counts, 0, sizeof(counts)); // zero out the histogram for curr byte
+        	__m256i mask = _mm256_set1_epi32(MASK); // mask to extract one byte
+        	__m256i shift = _mm256_set1_epi32(digit * 8); // shift amount for curr byte	
 
-        	// count the instances of each number at the current digit
-        	memset(counts, 0, sizeof(counts));
-        	__m256i mask_vec = _mm256_set1_epi32(MASK); // Mask for extracting bits
-        	__m256i shift_vec = _mm256_set1_epi32(digit * 8); // Shift amount for the current digit
-
-
-
+		// count the instances of each number at the current byte
         	for (size_t i = 0; i < size; i += 8) {
-            		__m256i data = _mm256_loadu_si256((__m256i *)&arr[i]); // Load 8 integers
-            		__m256i shifted = _mm256_srlv_epi32(data, shift_vec); // Shift to get the target digit
-            		__m256i radix = _mm256_and_si256(shifted, mask_vec); // Extract digit
-            		for (int j = 0; j < 8; j++) {
-                		counts[_mm256_extract_epi32(radix, j)]++; // Increment the histogram
+			// parallelized simd extraction of byte values 8 integers at a time 
+            		__m256i elements = _mm256_loadu_si256((__m256i *)&arr[i]); // load 8 ints
+            		__m256i shifted = _mm256_srlv_epi32(elements, shift); // bit shift to target byte
+            		__m256i byte = _mm256_and_si256(shifted, mask); // extract  byte
+            		
+			// serial incrementation of the histogram
+			for (int j = 0; j < 8; j++) {
+				counts[_mm256_extract_epi32(byte, j)]++;
             		}
         	}
 
@@ -64,12 +64,16 @@ void radix_sort_simd(uint32_t *arr, size_t size) {
 
         	// Step 3: Scatter elements to temp array
         	for (size_t i = 0; i < size; i += 8) {
-            		__m256i data = _mm256_loadu_si256((__m256i *)&arr[i]); // Load 8 integers
-            		__m256i shifted = _mm256_srlv_epi32(data, shift_vec); // Shift to get the target digit
-            		__m256i radix = _mm256_and_si256(shifted, mask_vec); // Extract digit
+			// parellelized byte extraction
+            		__m256i elements = _mm256_loadu_si256((__m256i *)&arr[i]); // load 8 ints
+            		__m256i shifted = _mm256_srlv_epi32(elements, shift); // shift to target byte
+            		__m256i radix = _mm256_and_si256(shifted, mask); // extract byte
+
+			// scatter elemetns into buckets based on calculated placements
             		for (int j = 0; j < 8; j++) {
                 		uint32_t digit_value = _mm256_extract_epi32(radix, j);
                 		temp[placements[digit_value]++] = arr[i + j];
+				//placements[digit_value]++;
             		}
         	}
 
@@ -78,8 +82,9 @@ void radix_sort_simd(uint32_t *arr, size_t size) {
         	arr = temp;
         	temp = swap;
     	}
-
-    	free(temp); // Free the temporary buffer
+	
+	// cleanup sorting array 
+    	free(temp); 
 
 }
 
@@ -107,14 +112,14 @@ void radix_sort_vanilla(uint32_t *arr, size_t size) {
 	
 	// main sorting loop
 	// sort by each digit from least to most significant
-    	for (int exponent = 1; max_value/exponent > 0; exponent *= RADIX) {
+    	for (uint32_t exponent = 1; max_value/exponent > 0; exponent *= RADIX) {
         	
 		// histogram for current digit
 		int count[RADIX];
 		memset(count, 0, sizeof(count));
 		
 		// count each instance of each number at current digit
-        	for (int i = 0; i < size; i++) {
+        	for (size_t i = 0; i < size; i++) {
             		count[(arr[i] / exponent) % RADIX]++;
         	}
 		
@@ -125,12 +130,12 @@ void radix_sort_vanilla(uint32_t *arr, size_t size) {
 		
 		// sort array based on histogram placements and current digit
         	for (int i = size - 1; i >= 0; i--) {
-            		sorting_arr[count[(arr[i] / exponent) % RADIX]] = arr[i];
-			count[(arr[i] / exponent) % RADIX]--;
+            		sorting_arr[--count[(arr[i] / exponent) % RADIX]] = arr[i];
+			//count[(arr[i] / exponent) % RADIX]--;
         	}
 		
 		// copy sorted array for current digit back to origional array
-        	for (int i = 0; i < size; i++) {
+        	for (size_t i = 0; i < size; i++) {
             		arr[i] = sorting_arr[i];
         	}
     	}
@@ -143,7 +148,7 @@ void radix_sort_vanilla(uint32_t *arr, size_t size) {
 int main() {
 	
 	// initialize random unssorted array	
-	size_t size = 1 << 22; // 2^22 elements (4GB given elements are unit32_t)
+	size_t size = 1 << 3; // 2^22 elements (4GB given elements are unit32_t)
 	
 	// allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr_simd = malloc(size * sizeof(uint32_t));
@@ -181,13 +186,18 @@ int main() {
     	// validate sorting 
     	for (size_t i = 1; i < size; i++) {
         	if (arr_simd[i - 1] > arr_simd[i] || arr_vnla[i - 1] > arr_vnla[i]) {
-            		printf("Sorting failed.\n");
+			if (arr_simd[i - 1] > arr_simd[i]) {
+            			printf("Simd sorting failed.\n");
+			} else {
+				printf("Vanilla sorting failed.\n");
+			}
 			// cleanup on failure
             		free(arr_simd);
             		free(arr_vnla);
             		return 1;
         	}
-		// printf("%d\n", arr[i]);
+		printf("%d\n", arr_simd[i]);
+		// printf("%d\n", arr_vnla[i]);
     	}
 
 
