@@ -37,54 +37,54 @@ void radix_sort_simd(uint32_t *arr, size_t size) {
 
 	// main sorting loop
 	// sort by each byte from least to most significant (4 digits bc 4 bytes in unint32_t)
-    	for (int digit = 0; digit < 4; digit++) {
+    for (int digit = 0; digit < 4; digit++) {
 		
 		memset(counts, 0, sizeof(counts)); // zero out the histogram for curr byte
-        	__m256i mask = _mm256_set1_epi32(MASK); // mask to extract one byte
-        	__m256i shift = _mm256_set1_epi32(digit * 8); // shift amount for curr byte	
+        __m256i mask = _mm256_set1_epi32(MASK); // mask to extract one byte
+        __m256i shift = _mm256_set1_epi32(digit * 8); // shift amount for curr byte	
 
 		// count the instances of each number at the current byte
-        	for (size_t i = 0; i < size; i += 8) {
-			// parallelized simd extraction of byte values 8 integers at a time 
-            		__m256i elements = _mm256_loadu_si256((__m256i *)&arr[i]); // load 8 ints
-            		__m256i shifted = _mm256_srlv_epi32(elements, shift); // bit shift to target byte
-            		__m256i byte = _mm256_and_si256(shifted, mask); // extract  byte
-            		
-			// serial incrementation of the histogram
-			for (int j = 0; j < 8; j++) {
-				counts[_mm256_extract_epi32(byte, j)]++;
-            		}
-        	}
+        for (size_t i = 0; i < size; i += 8) {
+            // parallelized simd extraction of byte values 8 integers at a time 
+            __m256i elements = _mm256_loadu_si256((__m256i *)&arr[i]); // load 8 ints
+            __m256i shifted = _mm256_srlv_epi32(elements, shift); // bit shift to target byte
+            __m256i byte = _mm256_and_si256(shifted, mask); // extract  byte
+                    
+            // serial incrementation of the histogram
+            for (int j = 0; j < 8; j++) {
+                counts[_mm256_extract_epi32(byte, j)]++;
+            }
+        }
 
-        	// convert counts from the histogram into placements
-        	placements[0] = 0;
-        	for (int i = 1; i < RADIX; i++) {
-            		placements[i] = placements[i - 1] + counts[i - 1];
-        	}
+        // convert counts from the histogram into placements
+        placements[0] = 0;
+        for (int i = 1; i < RADIX; i++) {
+            placements[i] = placements[i - 1] + counts[i - 1];
+        }
 
-        	// Step 3: Scatter elements to temp array
-        	for (size_t i = 0; i < size; i += 8) {
-			// parellelized byte extraction
-            		__m256i elements = _mm256_loadu_si256((__m256i *)&arr[i]); // load 8 ints
-            		__m256i shifted = _mm256_srlv_epi32(elements, shift); // shift to target byte
-            		__m256i radix = _mm256_and_si256(shifted, mask); // extract byte
+        // sort array based on histogram placements and current byte
+        for (size_t i = 0; i < size; i += 8) {
+            // parellelized byte extraction
+            __m256i elements = _mm256_loadu_si256((__m256i *)&arr[i]); // load 8 ints
+            __m256i shifted = _mm256_srlv_epi32(elements, shift); // shift to target byte
+            __m256i radix = _mm256_and_si256(shifted, mask); // extract byte
 
-			// scatter elemetns into buckets based on calculated placements
-            		for (int j = 0; j < 8; j++) {
-                		uint32_t digit_value = _mm256_extract_epi32(radix, j);
-                		temp[placements[digit_value]++] = arr[i + j];
-				//placements[digit_value]++;
-            		}
-        	}
+            // scatter elemetns into buckets based on calculated placements
+            for (int j = 0; j < 8; j++) {
+                uint32_t digit_value = _mm256_extract_epi32(radix, j);
+                temp[placements[digit_value]] = arr[i + j];
+                placements[digit_value]++;
+            }
+        }
 
-        	// Step 4: Swap buffers
-        	uint32_t *swap = arr;
-        	arr = temp;
-        	temp = swap;
-    	}
+        // Step 4: Swap buffers
+        uint32_t *swap = arr;
+        arr = temp;
+        temp = swap;
+    }
 	
 	// cleanup sorting array 
-    	free(temp); 
+    free(temp); 
 
 }
 
