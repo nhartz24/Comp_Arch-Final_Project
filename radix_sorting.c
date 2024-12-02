@@ -10,6 +10,13 @@
  * RUN: ./radix_sort_simd
  */
 
+// function for timing cpu cycles
+static inline uint64_t rdtsc() {
+	unsigned long a, d;
+	asm volatile("rdtsc" : "=a"(a), "=d"(d));
+	return a | ((uint64_t)d << 32);
+}
+
 // Avoid making changes to this function skeleton, apart from data type changes if required
 // In this starter code we have used uint32_t, feel free to change it to any other data type if required
 void sort_array(uint32_t *arr, size_t size) {
@@ -97,10 +104,19 @@ int main() {
 	for (size_t i = 0; i < size; i++) {
 		arr[i] = rand();
     }
+
+	// declare variables for timing
+    uint64_t start, end, time;
     
+	// SIMD radix sorting and timing
+    start = rdtsc();
 	// Sort the copied array
 	sort_array(arr, size);
+    end = rdtsc();
+    time = end - start;
 
+	// print results
+	printf("SIMD sort time: %d cycles\n", time);
 
 	// validate sorting 
     for (size_t i = 1; i < size; i++) {
