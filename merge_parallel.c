@@ -7,6 +7,13 @@
 uint32_t *a;
 size_t MAX;
 
+
+static inline uint64_t rdtsc() {
+	unsigned long a, d;
+	asm volatile("rdtsc" : "=a"(a), "=d"(d));
+	return a | ((uint64_t)d << 32);
+}
+
 void merge(size_t l, size_t m, size_t h) {
     size_t n1 = m - l + 1, n2 = h - m;
     size_t *L = malloc(n1 * sizeof(size_t));
@@ -87,8 +94,6 @@ void sort_array(uint32_t *arr, size_t size) {
     //implement parallel merging if needed
 
 
-
-
     for(int j = 2; j <= num_threads; j*=2){
         l = 0;
         N = num_threads/j;
@@ -106,14 +111,9 @@ void sort_array(uint32_t *arr, size_t size) {
         for (size_t i = 0; i < N; i++){
             
             pthread_join(threads[i], NULL);
-    }
+        }
 
     }
-
-
-
-
-
 
 }
 
@@ -128,7 +128,7 @@ void print_array(uint32_t *arr, size_t size) {
 int main() {
     
  // Adjust to a reasonable number of threads
-    size_t size = 1 << 28;
+    size_t size = 1 << 22;
     // size_t size = 64;
     u_int32_t *sorted_arr = malloc(size * sizeof(uint32_t)); 
     if (!sorted_arr) {
@@ -143,7 +143,18 @@ int main() {
     MAX = size;
     a = sorted_arr;
 
+    // declare variables for timing
+    uint64_t start, end, time;
+
+    start = rdtsc();
+    // Sort the copied array
     sort_array(sorted_arr, size);
+    end = rdtsc();
+    time = end - start;
+
+    printf("Sort time: %d cycles\n", time);
+
+
     // print_array(sorted_arr, size);
 
     free(sorted_arr);
