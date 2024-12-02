@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 	
 	// initialize random unssorted array	
 	//size_t size = 1 << 22; // 2^22 elements (4GB given elements are unit32_t)
-    
+
 	// allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr_simd = malloc(size * sizeof(uint32_t));
 	uint32_t *arr_vnla = malloc(size * sizeof(uint32_t));
@@ -190,9 +190,9 @@ int main(int argc, char *argv[]) {
     vanilla_time = end - start;
 
     // compare sorting results in cycles and speedup
-    printf("SIMD sort time: %d cycles\n", simd_time);
-    printf("Vanilla sort time: %d cycles\n", vanilla_time);
-    printf("Speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / simd_time) * 100);
+    // printf("SIMD sort time: %d cycles\n", simd_time);
+    // printf("Vanilla sort time: %d cycles\n", vanilla_time);
+    // printf("Speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / simd_time) * 100);
 
     // print results for csv
     double speedup = ((double)(vanilla_time - simd_time) / simd_time) * 100;
