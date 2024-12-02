@@ -157,8 +157,8 @@ int main(int argc, char *argv[]) {
     size_t size = 1ULL << power;
 	
 	// initialize random unssorted array	
-	size_t size = 1 << 22; // 2^22 elements (4GB given elements are unit32_t)
-	
+	//size_t size = 1 << 22; // 2^22 elements (4GB given elements are unit32_t)
+    
 	// allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr_simd = malloc(size * sizeof(uint32_t));
 	uint32_t *arr_vnla = malloc(size * sizeof(uint32_t));
