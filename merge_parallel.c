@@ -23,7 +23,7 @@ void merge(size_t l, size_t m, size_t h) {
     for (i = 0; i < n2; i++) R[i] = a[i + m + 1];
     i = j = 0;
     while (i < n1 && j < n2) {
-        if (L[i] < R[j]) a[k++] = L[i++];
+        if (L[i] <= R[j]) a[k++] = L[i++];
         else a[k++] = R[j++];
     }
     while (i < n1) a[k++] = L[i++];

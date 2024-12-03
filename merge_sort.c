@@ -22,7 +22,7 @@ void merge(uint32_t *arr, size_t l, size_t m, size_t h, size_t *temp) {
 
     // Merge the temp arrays back into arr[l..h]
     while (i <= m && j <= h) {
-        if (temp[i] < temp[j]) arr[k++] = temp[i++];
+        if (temp[i] <= temp[j]) arr[k++] = temp[i++];
         else arr[k++] = temp[j++];
     }
 
