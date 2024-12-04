@@ -88,9 +88,14 @@ void sort_array(uint32_t *arr, size_t size) {
     free(sorting_arr); 
 }
 
-int main() {
-	// initialize random unssorted array	
-	size_t size = 1 << 30; // 2^30 elements (4GB given elements are unit32_t)
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <power>\n", argv[0]);
+        return 1;
+    }
+
+    int power = atoi(argv[1]);
+    size_t size = 1 << power;
 
     // allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr = malloc(size * sizeof(uint32_t));
@@ -115,8 +120,8 @@ int main() {
     end = rdtsc();
     time = end - start;
 
-	// print results
-	printf("SIMD sort time: %lu cycles\n", time);
+	// Just output power, size, and SIMD time
+    printf("%d,%zu,%lu\n", power, size, time);
 
 	// validate sorting 
     for (size_t i = 1; i < size; i++) {

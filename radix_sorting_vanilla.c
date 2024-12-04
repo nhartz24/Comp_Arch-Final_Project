@@ -73,40 +73,45 @@ void sort_array(uint32_t *arr, size_t size) {
     free(sorting_arr);
 }
 
-int main() {
-	// initialize random unssorted array	
-	size_t size = 1 << 22; // 2^30 elements (4GB given elements are unit32_t)
-
-    // allocate space for arrays for each sorting algo (simd vs vanilla)
-	uint32_t *arr = malloc(size * sizeof(uint32_t));
-	if (!arr) {
-		perror("Failed to allocate memory");
-		exit(EXIT_FAILURE);
-	}
-
-	// fill the arrays with (the same) random numbers
-    srand((unsigned)time(NULL));
-	for (size_t i = 0; i < size; i++) {
-		arr[i] = rand();
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        printf("Usage: %s <power>\n", argv[0]);
+        return 1;
     }
 
-	// declare variables for timing
+    int power = atoi(argv[1]);
+    size_t size = 1 << power;
+
+    // initialize random unssorted array	
+    uint32_t *arr = malloc(size * sizeof(uint32_t));
+    if (!arr) {
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
+    }
+
+    // fill the arrays with (the same) random numbers
+    srand((unsigned)time(NULL));
+    for (size_t i = 0; i < size; i++) {
+        arr[i] = rand();
+    }
+
+    // declare variables for timing
     uint64_t start, end, time;
     
-	// SIMD radix sorting and timing
+    // SIMD radix sorting and timing
     start = rdtsc();
-	// Sort the copied array
-	sort_array(arr, size);
+    // Sort the copied array
+    sort_array(arr, size);
     end = rdtsc();
     time = end - start;
 
-	// print results
-	printf("Vanilla sort time: %lu cycles\n", time);
+    // Just output power, size, and vanilla time
+    printf("%d,%zu,%lu\n", power, size, time);
 
-	// validate sorting 
+    // validate sorting 
     for (size_t i = 1; i < size; i++) {
         if (arr[i - 1] > arr[i]) {
-			printf("Simd sorting failed.\n");
+            printf("Simd sorting failed.\n");
             // cleanup on failure
             free(arr);
             return 1;
@@ -114,10 +119,10 @@ int main() {
         // printf("%d\n", arr[i]);
     }
 
-	printf("done and validated\n");
+    printf("done and validated\n");
 
-	// cleanup
-	free(arr);
+    // cleanup
+    free(arr);
 
-	return 0;
+    return 0;
 }
