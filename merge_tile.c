@@ -3,14 +3,18 @@
 #include <stdint.h>
 #include <time.h>
 
-#define TILE_SIZE 32  // Example: Choose a tile size that fits into the L1 cache
+#define TILE_SIZE 32 // Threshold for tiling
+
+uint32_t *aux; // Auxiliary array for merging
+size_t MAX;
 
 static inline uint64_t rdtsc() {
-	unsigned long a, d;
-	asm volatile("rdtsc" : "=a"(a), "=d"(d));
-	return a | ((uint64_t)d << 32);
+    unsigned long a, d;
+    asm volatile("rdtsc" : "=a"(a), "=d"(d));
+    return a | ((uint64_t)d << 32);
 }
 
+// Iterative sorting for small tiles (Insertion Sort)
 void insertion_sort(uint32_t *arr, size_t l, size_t h) {
     for (size_t i = l + 1; i <= h; i++) {
         uint32_t key = arr[i];
@@ -23,83 +27,86 @@ void insertion_sort(uint32_t *arr, size_t l, size_t h) {
     }
 }
 
-void merge(uint32_t *arr, size_t l, size_t m, size_t r, uint32_t *temp) {
+// Merge two sorted halves
+void merge(uint32_t *arr, size_t l, size_t m, size_t h) {
     size_t i = l, j = m + 1, k = l;
 
-    while (i <= m && j <= r) {
+    // Merge into the auxiliary array
+    while (i <= m && j <= h) {
         if (arr[i] <= arr[j]) {
-            temp[k++] = arr[i++];
+            aux[k++] = arr[i++];
         } else {
-            temp[k++] = arr[j++];
+            aux[k++] = arr[j++];
         }
     }
+    while (i <= m) aux[k++] = arr[i++];
+    while (j <= h) aux[k++] = arr[j++];
 
-    while (i <= m) temp[k++] = arr[i++];
-    while (j <= r) temp[k++] = arr[j++];
-
-    for (i = l; i <= r; i++) {
-        arr[i] = temp[i];
+    // Copy back to the original array
+    for (i = l; i <= h; i++) {
+        arr[i] = aux[i];
     }
 }
 
-void tiled_merge_sort(uint32_t *arr, size_t size) {
-    uint32_t *temp = malloc(size * sizeof(uint32_t));
-    if (!temp) {
-        perror("Failed to allocate memory");
-        exit(EXIT_FAILURE);
+// Recursive merge sort with tiling optimization
+void tiled_merge_sort(uint32_t *arr, size_t l, size_t h) {
+    if (h - l + 1 <= TILE_SIZE) {
+        // Sort small subarray using insertion sort
+        insertion_sort(arr, l, h);
+        return;
     }
 
-    // Step 1: Sort tiles using insertion sort
-    for (size_t i = 0; i < size; i += TILE_SIZE) {
-        size_t end = (i + TILE_SIZE - 1 < size) ? i + TILE_SIZE - 1 : size - 1;
-        insertion_sort(arr, i, end);
-    }
+    size_t m = l + (h - l) / 2;
 
-    // Step 2: Merge sorted tiles
-    for (size_t curr_size = TILE_SIZE; curr_size < size; curr_size *= 2) {
-        for (size_t left_start = 0; left_start < size - 1; left_start += 2 * curr_size) {
-            size_t mid = left_start + curr_size - 1;
-            size_t right_end = (left_start + 2 * curr_size - 1 < size - 1) ? left_start + 2 * curr_size - 1 : size - 1;
+    // Recursive calls for left and right halves
+    tiled_merge_sort(arr, l, m);
+    tiled_merge_sort(arr, m + 1, h);
 
-            merge(arr, left_start, mid, right_end, temp);
-        }
-    }
-
-    free(temp);
+    // Merge the two sorted halves
+    merge(arr, l, m, h);
 }
 
 void sort_array(uint32_t *arr, size_t size) {
-    tiled_merge_sort(arr, size);
-}
-
-int main()
-{
-    size_t size = 1 << 22; // Example: Allocate space for 2^21 elements (~2MB for int)
-    int *arr = malloc(size * sizeof(int)); // Allocate memory for the array
-    if (!arr)
-    {
-        perror("Failed to allocate memory for array");
+    aux = malloc(size * sizeof(uint32_t)); // Allocate auxiliary array
+    if (!aux) {
+        perror("Failed to allocate auxiliary array");
         exit(EXIT_FAILURE);
     }
 
-    srand((unsigned)time(NULL)); // Seed the random number generator
-    for (size_t i = 0; i < size; i++)
+    tiled_merge_sort(arr, 0, size - 1);
+
+    free(aux); // Free auxiliary array
+}
+
+void print_array(uint32_t *arr, size_t size) {
+    for (size_t i = 0; i < size; i++) {
+        printf("%u ", arr[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    size_t size = 1 << 22; // Example: 2^20 elements
+    uint32_t *arr = malloc(size * sizeof(uint32_t));
+    if (!arr) {
+        perror("Failed to allocate array");
+        exit(EXIT_FAILURE);
+    }
+
+    srand((unsigned)time(NULL));
+    for (size_t i = 0; i < size; i++) {
         arr[i] = rand();
+    }
 
     // Declare variables for timing
     uint64_t start, end, time;
 
     start = rdtsc();
-    // Sort the array
     sort_array(arr, size);
     end = rdtsc();
     time = end - start;
 
-    printf("Sort time: %d cycles\n", time);
-
-    // Optionally print the array to verify sorting
-    // print_array(arr, size);
-
+    printf("Sort time: %llu cycles\n", time);
 
     for (size_t i = 1; i < size; i++) {
         if (arr[i - 1] > arr[i] ) {
@@ -109,8 +116,9 @@ int main()
         }
     }
 
-    // Free the allocated memory for the array
-    free(arr);
+    // Uncomment to print the array
+    // print_array(arr, size);
 
+    free(arr);
     return 0;
 }
