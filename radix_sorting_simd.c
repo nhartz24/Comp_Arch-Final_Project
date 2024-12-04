@@ -6,7 +6,7 @@
 #include <string.h>
 
 /* Code for SIMD vectorization of radix sort using intel AVX2 intrinsics
- * COMPILE: gcc -O3 -mavx2 -o radix_sort_simd radix_sorting.c
+ * COMPILE: gcc -O3 -mavx2 -o radix_sort_simd radix_sorting_simd.c
  * RUN: ./radix_sort_simd
  */
 
@@ -24,8 +24,8 @@ void sort_array(uint32_t *arr, size_t size) {
 		// allocate space for array used in sorting
 	uint32_t *sorting_arr = malloc(size * sizeof(uint32_t));
 	if (!sorting_arr) {
-        	perror("Failed to allocate memory");
-        	exit(EXIT_FAILURE);
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
 	}
 
 	// use radix base of 256 (one byte)	
@@ -85,12 +85,24 @@ void sort_array(uint32_t *arr, size_t size) {
     }
 	
 	// cleanup sorting array 
-    free(sorting_arr); 
+	free(sorting_arr); 
 }
 
-int main() {
-	// initialize random unssorted array	
-	size_t size = 1 << 22; // 2^22 elements (4GB given elements are unit32_t)
+// main
+// UNCOMMENT FOR DATA COLELCTION 
+int main(/*int argc, char *argv[]*/) {
+	
+	// FOR DATA COLLECTION 
+	// if (argc != 2) {
+	// 	printf("Usage: %s <power>\n", argv[0]);
+	//	return 1;
+	// }
+	// int power = atoi(argv[1]);
+    // size_t size = 1 << power;
+	
+	// REMOVE FOR DATA COLLECTION
+	// initialize random unssorted array
+	size_t size = 1 << 30; // 2^30 elements (4GB given elements are unit32_t)
 
     // allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr = malloc(size * sizeof(uint32_t));
@@ -101,34 +113,38 @@ int main() {
 
 	// fill the arrays with (the same) random numbers
     srand((unsigned)time(NULL));
-	for (size_t i = 0; i < size; i++) {
-		arr[i] = rand();
+    for (size_t i = 0; i < size; i++) {
+        arr[i] = rand();
     }
 
 	// declare variables for timing
-    uint64_t start, end, time;
+	uint64_t start, end, time;
     
 	// SIMD radix sorting and timing
-    start = rdtsc();
+	start = rdtsc();
 	// Sort the copied array
 	sort_array(arr, size);
-    end = rdtsc();
-    time = end - start;
-
-	// print results
-	printf("SIMD sort time: %d cycles\n", time);
+	end = rdtsc();
+	time = end - start;
+	
+	// FOR DATA COLLECTION
+    // printf("%d,%zu,%lu\n", power, size, time);
+	
+	// REMOVE FOR DATA COLLECTION
+	printf("SIMD sort time: %lu cycles\n", time);
 
 	// validate sorting 
-    for (size_t i = 1; i < size; i++) {
-        if (arr[i - 1] > arr[i]) {
+	for (size_t i = 1; i < size; i++) {
+		if (arr[i - 1] > arr[i]) {
 			printf("Simd sorting failed.\n");
-            // cleanup on failure
-            free(arr);
-            return 1;
-        }
-        // printf("%d\n", arr[i]);
-    }
-
+			// cleanup on failure
+			free(arr);
+			return 1;
+		}
+		// printf("%d\n", arr[i]);
+	}
+	
+	// REMOVE FOR DATA COLLECTION
 	printf("done and validated\n");
 
 	// cleanup
