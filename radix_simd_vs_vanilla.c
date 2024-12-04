@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
     // printf("Speedup: %.2f%%\n", ((double)(vanilla_time - simd_time) / simd_time) * 100);
 
     // print results for csv
-    double speedup = ((double)(vanilla_time - simd_time) / simd_time) * 100;
+    double speedup = (double)(vanilla_time / simd_time);
     printf("%d,%zu,%lu,%lu,%.2f\n", power, size, simd_time, vanilla_time, speedup);
 
     // validate sorting 
