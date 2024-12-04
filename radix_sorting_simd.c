@@ -24,8 +24,8 @@ void sort_array(uint32_t *arr, size_t size) {
 		// allocate space for array used in sorting
 	uint32_t *sorting_arr = malloc(size * sizeof(uint32_t));
 	if (!sorting_arr) {
-        	perror("Failed to allocate memory");
-        	exit(EXIT_FAILURE);
+        perror("Failed to allocate memory");
+        exit(EXIT_FAILURE);
 	}
 
 	// use radix base of 256 (one byte)	
@@ -98,13 +98,13 @@ int main(/*int argc, char *argv[]*/) {
 	//	return 1;
 	// }
 	// int power = atoi(argv[1]);
-    	// size_t size = 1 << power;
+    // size_t size = 1 << power;
 	
 	// REMOVE FOR DATA COLLECTION
 	// initialize random unssorted array
 	size_t size = 1 << 30; // 2^30 elements (4GB given elements are unit32_t)
 
-    	// allocate space for arrays for each sorting algo (simd vs vanilla)
+    // allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr = malloc(size * sizeof(uint32_t));
 	if (!arr) {
 		perror("Failed to allocate memory");
@@ -112,10 +112,10 @@ int main(/*int argc, char *argv[]*/) {
 	}
 
 	// fill the arrays with (the same) random numbers
-    	srand((unsigned)time(NULL));
-		for (size_t i = 0; i < size; i++) {
-			arr[i] = rand();
-    	}
+    srand((unsigned)time(NULL));
+    for (size_t i = 0; i < size; i++) {
+        arr[i] = rand();
+    }
 
 	// declare variables for timing
 	uint64_t start, end, time;
@@ -128,7 +128,7 @@ int main(/*int argc, char *argv[]*/) {
 	time = end - start;
 	
 	// FOR DATA COLLECTION
-    	// printf("%d,%zu,%lu\n", power, size, time);
+    // printf("%d,%zu,%lu\n", power, size, time);
 	
 	// REMOVE FOR DATA COLLECTION
 	printf("SIMD sort time: %lu cycles\n", time);

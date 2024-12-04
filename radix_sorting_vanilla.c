@@ -73,14 +73,21 @@ void sort_array(uint32_t *arr, size_t size) {
     free(sorting_arr);
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s <power>\n", argv[0]);
-        return 1;
-    }
+// main
+// UNCOMMENT FOR DATA COLELCTION 
+int main(/*int argc, char *argv[]*/) {
 
-    int power = atoi(argv[1]);
-    size_t size = 1 << power;
+    // FOR DATA COLLECTION 
+    // if (argc != 2) {
+    //     printf("Usage: %s <power>\n", argv[0]);
+    //     return 1;
+    // }
+    // int power = atoi(argv[1]);
+    // size_t size = 1 << power;
+
+    // REMOVE FOR DATA COLLECTION
+	// initialize random unssorted array
+	size_t size = 1 << 30; // 2^30 elements (4GB given elements are unit32_t)
 
     // initialize random unssorted array	
     uint32_t *arr = malloc(size * sizeof(uint32_t));
@@ -105,8 +112,11 @@ int main(int argc, char *argv[]) {
     end = rdtsc();
     time = end - start;
 
-    // Just output power, size, and vanilla time
-    printf("%d,%zu,%lu\n", power, size, time);
+	// FOR DATA COLLECTION
+    // printf("%d,%zu,%lu\n", power, size, time);
+	
+	// REMOVE FOR DATA COLLECTION
+	printf("Vanilla sort time: %lu cycles\n", time);
 
     // validate sorting 
     for (size_t i = 1; i < size; i++) {
@@ -118,8 +128,9 @@ int main(int argc, char *argv[]) {
         }
         // printf("%d\n", arr[i]);
     }
-
-    // printf("done and validated\n");
+	
+    // REMOVE FOR DATA COLLECTION
+	printf("done and validated\n");
 
     // cleanup
     free(arr);
