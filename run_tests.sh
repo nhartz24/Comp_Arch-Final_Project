@@ -11,8 +11,8 @@ echo "power,size,cycles" > vanilla_results.csv
 # Test sizes from 2^20 to 2^30, incrementing by 2
 for power in {20..30..2}; do
     echo "Testing size 2^$power"
-    # Run 100 times for each size
-    for run in {1..100}; do
+    # Run 10 times for each size
+    for run in {1..10}; do
         ./radix_sort_simd $power >> simd_results.csv
         ./radix_sort_vanilla $power >> vanilla_results.csv
     done
