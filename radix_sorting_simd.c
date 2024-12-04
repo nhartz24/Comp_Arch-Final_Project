@@ -6,7 +6,7 @@
 #include <string.h>
 
 /* Code for SIMD vectorization of radix sort using intel AVX2 intrinsics
- * COMPILE: gcc -O3 -mavx2 -o radix_sort_simd radix_sorting.c
+ * COMPILE: gcc -O3 -mavx2 -o radix_sort_simd radix_sorting_simd.c
  * RUN: ./radix_sort_simd
  */
 
@@ -90,7 +90,7 @@ void sort_array(uint32_t *arr, size_t size) {
 
 int main() {
 	// initialize random unssorted array	
-	size_t size = 1 << 29; // 2^30 elements (4GB given elements are unit32_t)
+	size_t size = 1 << 30; // 2^30 elements (4GB given elements are unit32_t)
 
     // allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr = malloc(size * sizeof(uint32_t));
