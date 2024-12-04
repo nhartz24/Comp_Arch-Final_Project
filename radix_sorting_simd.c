@@ -85,19 +85,26 @@ void sort_array(uint32_t *arr, size_t size) {
     }
 	
 	// cleanup sorting array 
-    free(sorting_arr); 
+	free(sorting_arr); 
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s <power>\n", argv[0]);
-        return 1;
-    }
+// main
+// UNCOMMENT FOR DATA COLELCTION 
+int main(/*int argc, char *argv[]*/) {
+	
+	// FOR DATA COLLECTION 
+	// if (argc != 2) {
+	// 	printf("Usage: %s <power>\n", argv[0]);
+	//	return 1;
+	// }
+	// int power = atoi(argv[1]);
+    	// size_t size = 1 << power;
+	
+	// REMOVE FOR DATA COLLECTION
+	// initialize random unssorted array
+	size_t size = 1 << 30; // 2^30 elements (4GB given elements are unit32_t)
 
-    int power = atoi(argv[1]);
-    size_t size = 1 << power;
-
-    // allocate space for arrays for each sorting algo (simd vs vanilla)
+    	// allocate space for arrays for each sorting algo (simd vs vanilla)
 	uint32_t *arr = malloc(size * sizeof(uint32_t));
 	if (!arr) {
 		perror("Failed to allocate memory");
@@ -105,36 +112,40 @@ int main(int argc, char *argv[]) {
 	}
 
 	// fill the arrays with (the same) random numbers
-    srand((unsigned)time(NULL));
-	for (size_t i = 0; i < size; i++) {
-		arr[i] = rand();
-    }
+    	srand((unsigned)time(NULL));
+		for (size_t i = 0; i < size; i++) {
+			arr[i] = rand();
+    	}
 
 	// declare variables for timing
-    uint64_t start, end, time;
+	uint64_t start, end, time;
     
 	// SIMD radix sorting and timing
-    start = rdtsc();
+	start = rdtsc();
 	// Sort the copied array
 	sort_array(arr, size);
-    end = rdtsc();
-    time = end - start;
-
-	// Just output power, size, and SIMD time
-    printf("%d,%zu,%lu\n", power, size, time);
+	end = rdtsc();
+	time = end - start;
+	
+	// FOR DATA COLLECTION
+    	// printf("%d,%zu,%lu\n", power, size, time);
+	
+	// REMOVE FOR DATA COLLECTION
+	printf("SIMD sort time: %lu cycles\n", time);
 
 	// validate sorting 
-    for (size_t i = 1; i < size; i++) {
-        if (arr[i - 1] > arr[i]) {
+	for (size_t i = 1; i < size; i++) {
+		if (arr[i - 1] > arr[i]) {
 			printf("Simd sorting failed.\n");
-            // cleanup on failure
-            free(arr);
-            return 1;
-        }
-        // printf("%d\n", arr[i]);
-    }
-
-	// printf("done and validated\n");
+			// cleanup on failure
+			free(arr);
+			return 1;
+		}
+		// printf("%d\n", arr[i]);
+	}
+	
+	// REMOVE FOR DATA COLLECTION
+	printf("done and validated\n");
 
 	// cleanup
 	free(arr);
