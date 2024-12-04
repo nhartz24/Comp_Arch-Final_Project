@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
         // printf("%d\n", arr[i]);
     }
 
-	printf("done and validated\n");
+	// printf("done and validated\n");
 
 	// cleanup
 	free(arr);
