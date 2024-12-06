@@ -1,3 +1,7 @@
+// THIS FILE CAN BE RUN WITH THE FOLLOWING COMMAND - you need to have cuda enabled and the required packages
+// nvcc -o parallel_sort sort.cu && ./parallel_sort
+// Additionally, to run the slower, untiled version, uncomment line 258 and comment line 259. 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
@@ -42,6 +46,7 @@ __global__ void shared_bitonic_block_sort(int* arr, int n) {
             __syncthreads();
         }
     }
+    // Step 3: Copy sorted data back to shared memory
     if (index < n) {
         arr[index] = shared_arr[tid];
     }
@@ -248,7 +253,10 @@ void sort_array(int32_t* h_array, int n) {
     cudaMemcpy(d_array, h_array, array_size, cudaMemcpyHostToDevice);
 
     int num_blocks = n / THREADS_PER_BLOCK;
-    bitonic_block_sort<<<num_blocks, THREADS_PER_BLOCK>>>(d_array, n);
+
+    // these are the two different sorts, the fast one is enabled for now
+    // bitonic_block_sort<<<num_blocks, THREADS_PER_BLOCK, THREADS_PER_BLOCK * sizeof(int)>>>(d_array, n);
+    shared_bitonic_block_sort<<<num_blocks, THREADS_PER_BLOCK, THREADS_PER_BLOCK * sizeof(int)>>>(d_array, n);
     cudaDeviceSynchronize();
 
     int* src = d_array;
@@ -326,7 +334,7 @@ int main() {
 
     // Verify if the array is sorted
     if (is_sorted(sorted_array, n)) {
-        //printf("The array is sorted correctly.\n");
+        printf("The array is sorted correctly.\n");
     } else {
         printf("The array is NOT sorted correctly.\n");
     }
