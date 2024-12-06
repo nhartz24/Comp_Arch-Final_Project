@@ -1,3 +1,7 @@
+// THIS FILE CAN BE RUN WITH THE FOLLOWING COMMAND - you need to have cuda enabled and the required packages
+// nvcc -o parallel_sort sort.cu && ./parallel_sort
+// Additionally, to run the slower, untiled version, uncomment line 258 and comment line 259. 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda.h>
@@ -249,6 +253,9 @@ void sort_array(int32_t* h_array, int n) {
     cudaMemcpy(d_array, h_array, array_size, cudaMemcpyHostToDevice);
 
     int num_blocks = n / THREADS_PER_BLOCK;
+
+    // these are the two different sorts, the fast one is enabled for now
+    // bitonic_block_sort<<<num_blocks, THREADS_PER_BLOCK, THREADS_PER_BLOCK * sizeof(int)>>>(d_array, n);
     shared_bitonic_block_sort<<<num_blocks, THREADS_PER_BLOCK, THREADS_PER_BLOCK * sizeof(int)>>>(d_array, n);
     cudaDeviceSynchronize();
 
@@ -298,7 +305,7 @@ void sort_array(int32_t* h_array, int n) {
 
 int main() {
     uint64_t start , end, start1, end1;
-    int n = 1 << 28; 
+    int n = 1 << 30; 
     int32_t *sorted_array = (int32_t*)malloc(n * sizeof(int32_t));
 
     initialize_array(sorted_array, n);
