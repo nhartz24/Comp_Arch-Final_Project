@@ -4,6 +4,12 @@
 #include <time.h>
 #include <pthread.h>
 
+
+/* COMPILE: gcc -pthread merge_parallel.c -o merge_parallel
+ * RUN: ./merge_parallel
+ */
+
+
 uint32_t *a;
 size_t MAX;
 uint32_t *aux; // Global auxiliary array

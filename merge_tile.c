@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <time.h>
 
+
+/* COMPILE: gcc merge_tile.c -o merge_tile
+ * RUN: ./merge_tile
+ */
+
 #define TILE_SIZE 32 // Threshold for tiling
 
 uint32_t *aux; // Auxiliary array for merging

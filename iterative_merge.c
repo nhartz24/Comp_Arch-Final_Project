@@ -3,6 +3,11 @@
 #include <stdint.h>
 #include <time.h>
 
+
+/* COMPILE: gcc iterative_merge.c -o iterative_merge
+ * RUN: ./iterative_merge
+ */
+
 static inline uint64_t rdtsc() {
     unsigned long a, d;
     asm volatile("rdtsc" : "=a"(a), "=d"(d));

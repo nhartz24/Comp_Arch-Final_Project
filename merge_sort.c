@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <time.h>
 
+/* COMPILE: gcc merge_sort.c -o merge_sort
+ * RUN: ./merge_sort
+ */
+
 static inline uint64_t rdtsc() {
 	unsigned long a, d;
 	asm volatile("rdtsc" : "=a"(a), "=d"(d));

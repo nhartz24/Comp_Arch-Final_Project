@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <time.h>
 
+/* COMPILE: gcc merge_malloc.c -o merge_malloc
+ * RUN: ./merge_malloc
+ */
+
 static inline uint64_t rdtsc() {
     unsigned long a, d;
     asm volatile("rdtsc" : "=a"(a), "=d"(d));
